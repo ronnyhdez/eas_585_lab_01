@@ -1,0 +1,278 @@
+---
+title: "Lab 1: Introduction to Field Spectroscopy"
+subtitle: "Analyzing Spectral Reflectance"
+author: "Ronny A. Hernández Mora"
+date: "02/10/2021"
+output:
+  rmarkdown::pdf_document:
+    fig_caption: yes        
+    includes:  
+      in_header: my_header.tex
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE)
+
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(fs)
+library(purrr)
+library(stringr)
+library(gt)
+```
+
+<!-- Import leaf reflectance data -->
+```{r leaf_reflectance_data}
+files <- dir_ls(path = "data", glob = "data/reflectance*")
+
+reflectance <- map_dfr(.x = files, 
+                       .id = "file_id",
+                       .f = function(archivo) {
+                         read_csv(archivo,
+                                  skip = 4,
+                                  col_names = FALSE) %>% 
+                           rename(wavelength = X1,
+                                  reflectance = X2)
+                         
+                       }) %>% 
+  mutate(file_id = str_extract(file_id, "(-[^.]+)"))
+```
+
+<!-- Importa leaf first derivative data -->
+```{r leaf_first_derivative_data}
+files <- dir_ls(path = "data",  glob = "data/first_derivative*")
+
+first_derivative <- map_dfr(.x = files, 
+                            .id = "file_id",
+                            .f = function(archivo) {
+                              read_csv(archivo,
+                                       skip = 4,
+                                       col_names = FALSE) %>% 
+                                rename(wavelength = X1,
+                                       first_derivative = X2)
+                              
+                            }) %>% 
+  mutate(file_id = str_extract(file_id, "(_[^.]+)"))
+```
+
+<!-- Importa leaf ndvi data -->
+```{r leaf_ndvi_data}
+files <- dir_ls(path = "data", glob = "data/ndvi*")
+
+leaves_ndvi <- map_dfr(.x = files, 
+                       .id = "file_id",
+                       .f = function(archivo) {
+                         read_csv(archivo)   
+                       }) %>% 
+  mutate(file_id = str_extract(file_id, "(_[^.]+)"))
+```
+
+<!-- Import random sample data -->
+```{r random_sample_data}
+## Random samples ---
+ratio_06 <- read_csv("data/random_06_ratios.csv")
+ratio_18 <- read_csv("data/random_18_ratios.csv")
+ratio_23 <- read_csv("data/random_23_ratios.csv")
+
+random_ratios <- bind_rows(ratio_06, ratio_18, ratio_23)
+```
+
+<!-- Import random first derivative -->
+
+```{r}
+first_d_06 <- read_csv("data/random_06_first_derivative.csv",
+                       skip = 4,
+                       col_names = FALSE) %>% 
+  mutate(id = "random_06")
+
+first_d_18 <- read_csv("data/random_18_first_derivative.csv",
+                       skip = 4,
+                       col_names = FALSE) %>% 
+  mutate(id = "random_18")
+
+
+first_d_23 <- read_csv("data/random_23_first_derivative.csv",
+                       skip = 4,
+                       col_names = FALSE) %>% 
+  mutate(id = "random_23")
+
+random_first_derivative <- bind_rows(first_d_06, 
+                                     first_d_18,
+                                     first_d_23) %>% 
+  rename("wavelength" = "X1",
+         "first_derivative" = "X2")
+```
+
+<!-- Import random second derivative -->
+
+```{r}
+second_d_06 <- read_csv("data/random_06_second_derivative.csv",
+                       skip = 4,
+                       col_names = FALSE) %>% 
+  mutate(id = "random_06")
+
+second_d_18 <- read_csv("data/random_18_second_derivative.csv",
+                       skip = 4,
+                       col_names = FALSE) %>% 
+  mutate(id = "random_18")
+
+second_d_23 <- read_csv("data/random_23_second_derivative.csv",
+                       skip = 4,
+                       col_names = FALSE) %>% 
+  mutate(id = "random_23")
+
+random_second_derivative <- bind_rows(second_d_06, 
+                                      second_d_18,
+                                      second_d_23) %>% 
+  rename("wavelength" = "X1",
+         "second_derivative" = "X2")
+```
+
+## Introduction
+
+<!-- -   Theoretical Background -- Define the problem and how you attempt to solve it. -->
+
+<!-- -   Define the terminology you will be using. -->
+
+<!--       1. Spectral Signature: -->
+<!--       2. Red Edge: -->
+<!--       3. Absorption Feature: -->
+<!--       4. Directional and Diffuse Light: -->
+<!--       5. First Derivative: -->
+
+<!-- -   State the objective and purpose of the lab. -->
+
+## Methods
+
+ <!-- - Discuss any techniques/tools used in the lab. Why are these -->
+ <!-- relevant? -->
+ <!-- - What processes are involved? Illustrate the methods via a -->
+ <!-- flowchart. -->
+
+## Results
+
+ <!-- - Quantitatively and qualitatively present your results. -->
+ 
+### Random samples
+
+#### Random samples ratios
+
+<!-- select 3 ratios -->
+<!-- PRI = Photochemical reflectance index (visible ratio)-->
+<!-- https://www.sciencedirect.com/science/article/abs/pii/S0034425720302583 -->
+
+<!-- NDVI = normalized difference vegetation index (visible/NIR ratio) -->
+
+```{r random_ratios, fig.width = 9}
+random_ratios %>%
+  select(`File name`, `PRI (531-570)/(531+570)`, 
+         `NDVI (774-677)/(774+677)`, `NDVI (800-680)/(800+680)`) %>%
+  gt() %>% 
+  tab_header(title = "Selected ratios values for the random samples") %>% 
+  tab_source_note(
+    source_note = "Table 1. Values for the selected ratios obtained from the
+                  random samples with the spectrometer UniSpec SC"
+  )
+```
+
+#### Random samples wavelengths
+
+<!-- fig.cap = 'First line of a figure caption, \\\\ followed by an incredibly, -->
+
+#### Random samples derivatives
+
+```{r random_first_derivative, fig.cap = "Values for the random spectra (first derivative) of three samples. The selected samples file names choosen are 001-00006.spu (random_06), 001-00018.spu (random_18) and 001-00023 (random_23)  "}
+random_first_derivative %>% 
+  filter(wavelength > 400, wavelength < 900) %>%
+  ggplot(aes(x = wavelength, 
+             y = first_derivative, 
+             color = id)) +
+  geom_line() +
+  scale_y_continuous(breaks = seq(-0.009, 0.025, by = 0.002)) +
+  scale_x_continuous(breaks = seq(400, 900, by = 50)) +
+  scale_color_viridis_d() +
+  labs(x = "Wavelength (nm)",
+       y = "First derivative",
+       color = "Random sample") +
+  theme_light(base_size = 11)
+```
+
+
+```{r random_second_derivative, fig.cap = "Values for the random spectra (second derivative) of three samples. The selected samples file names choosen are 001-00006.spu (random_06), 001-00018.spu (random_18) and 001-00023 (random_23)  "}
+random_second_derivative %>% 
+  filter(wavelength > 400, wavelength < 900) %>%
+  ggplot(aes(x = wavelength, 
+             y = second_derivative, 
+             color = id)) +
+  geom_line() +
+  scale_y_continuous(breaks = seq(-0.008, 0.008, by = 0.001)) +
+  scale_x_continuous(breaks =  seq(400, 900, by = 50)) +
+  scale_color_viridis_d() +
+  labs(x = "Wavelength",
+       y = "Second derivative",
+       color = "Random sample") +
+  theme_light(base_size = 11)
+```
+
+### Leaves reflectances
+
+```{r leaf_reflectances, fig.cap = "Reflectance for four leaf samples with different senescence state. Green and yellow 1 leaves shows more absorbance in the 650 nm to 700 nm compare too the red and yellow 2 samples."}
+reflectance %>% 
+  filter(wavelength > 400, wavelength < 900) %>% 
+  ggplot(aes(x = wavelength, y = reflectance, color = file_id)) +
+  geom_line() +
+  scale_color_viridis_d() +
+  scale_y_continuous(breaks = seq(0, 1.5, by = 0.1)) +
+  scale_x_continuous(breaks = seq(400, 1000, by = 50)) +
+  labs(x = "Wavelength (nm)",
+       y = "Reflectance",
+       color = "Leaf id") +
+  theme_light(base_size = 11)
+```
+
+### Leaves first derivative
+
+```{r leaf derivative, fig.cap = "Spectra (first derivative) for four leaf samples with different senescence state."}
+first_derivative %>% 
+  filter(wavelength > 400, wavelength < 1000) %>% 
+  ggplot(aes(x = wavelength, y = first_derivative, color = file_id)) +
+  geom_line() +
+  scale_y_continuous(breaks = seq(-0.009, 0.03, by = 0.002)) +
+  scale_x_continuous(breaks = seq(400, 900, by = 50)) +
+  scale_color_viridis_d(labels = c("Green leaf", "Red leaf",
+                                   "Yellow 1 leaf", "Yellow 2 leaf")) +
+  labs(x = "Wavelength (nm)",
+       y = "First derivative",
+       color = "Leaf id") +
+  theme_light(base_size = 11)
+```
+
+### Leaves NDVIs
+
+```{r leaves_ndvis}
+leaves_ndvi %>%
+  select(`File name`, `NDVI (774-677)/(774+677)`) %>%
+  gt() %>% 
+  tab_header(title = "NDVI values for green, red and yellows leaves") %>% 
+  tab_source_note(
+    source_note = "Table 2. Normalized difference vegetation index values (667-774 nm) for the sampled leaves"
+  )
+```
+
+## Discussion / conclussion
+
+ <!-- - What do the results mean? -->
+ <!-- - Was the original problem resolved effectively? -->
+ <!-- - What can this information be used for? -->
+
+
+## Lab questions
+
+  1. Explain some of the errors and considerations involved with the collection 
+  of spectra. (eg. Light Conditions (diffuse, directional)). Provide 3 examples
+  and briefly explain how they influence the data collection.
+  2. List the main biochemical drivers of leaf spectra. (3 minimum) (e.g:
+  chlorophyl A)
+  3. If the reflectance is a value of percentage (%) based on the incoming 
+  light, what does a value greater than 1 (100%) imply? (Think about the signal)
