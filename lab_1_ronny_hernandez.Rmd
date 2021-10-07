@@ -108,18 +108,18 @@ random_first_derivative <- bind_rows(first_d_06,
 
 ```{r}
 second_d_06 <- read_csv("data/random_06_second_derivative.csv",
-                       skip = 4,
-                       col_names = FALSE) %>% 
+                        skip = 4,
+                        col_names = FALSE) %>% 
   mutate(id = "random_06")
 
 second_d_18 <- read_csv("data/random_18_second_derivative.csv",
-                       skip = 4,
-                       col_names = FALSE) %>% 
+                        skip = 4,
+                        col_names = FALSE) %>% 
   mutate(id = "random_18")
 
 second_d_23 <- read_csv("data/random_23_second_derivative.csv",
-                       skip = 4,
-                       col_names = FALSE) %>% 
+                        skip = 4,
+                        col_names = FALSE) %>% 
   mutate(id = "random_23")
 
 random_second_derivative <- bind_rows(second_d_06, 
@@ -129,7 +129,7 @@ random_second_derivative <- bind_rows(second_d_06,
          "second_derivative" = "X2")
 ```
 
-## Introduction
+# Introduction
 
 <!-- -   Theoretical Background -- Define the problem and how you attempt to solve it. -->
 
@@ -143,20 +143,23 @@ random_second_derivative <- bind_rows(second_d_06,
 
 <!-- -   State the objective and purpose of the lab. -->
 
-## Methods
+# Methods
 
  <!-- - Discuss any techniques/tools used in the lab. Why are these -->
  <!-- relevant? -->
  <!-- - What processes are involved? Illustrate the methods via a -->
  <!-- flowchart. -->
 
-## Results
+# Results
 
  <!-- - Quantitatively and qualitatively present your results. -->
  
-### Random samples
+## Random samples
 
-#### Random samples ratios
+In the case of random samples, we present the results for ratios, wavelengths 
+and the first and second derivative. Each section result is showed below.
+
+### Random samples ratios
 
 <!-- select 3 ratios -->
 <!-- PRI = Photochemical reflectance index (visible ratio)-->
@@ -164,11 +167,19 @@ random_second_derivative <- bind_rows(second_d_06,
 
 <!-- NDVI = normalized difference vegetation index (visible/NIR ratio) -->
 
-```{r random_ratios, fig.width = 9}
+```{r random_ratios}
 random_ratios %>%
   select(`File name`, `PRI (531-570)/(531+570)`, 
          `NDVI (774-677)/(774+677)`, `NDVI (800-680)/(800+680)`) %>%
   gt() %>% 
+  tab_options(
+    table.font.size = 12,
+    table.width = 10
+  ) %>% 
+  # tab_style(
+  #   style = cell_text(size = px(12)),
+  #   locations = 
+  #   ) %>% 
   tab_header(title = "Selected ratios values for the random samples") %>% 
   tab_source_note(
     source_note = "Table 1. Values for the selected ratios obtained from the
@@ -176,11 +187,11 @@ random_ratios %>%
   )
 ```
 
-#### Random samples wavelengths
+### Random samples wavelengths
 
 <!-- fig.cap = 'First line of a figure caption, \\\\ followed by an incredibly, -->
 
-#### Random samples derivatives
+### Random samples derivatives
 
 ```{r random_first_derivative, fig.cap = "Values for the random spectra (first derivative) of three samples. The selected samples file names choosen are 001-00006.spu (random_06), 001-00018.spu (random_18) and 001-00023 (random_23)  "}
 random_first_derivative %>% 
@@ -214,6 +225,8 @@ random_second_derivative %>%
        color = "Random sample") +
   theme_light(base_size = 11)
 ```
+
+## Leaves
 
 ### Leaves reflectances
 
@@ -260,14 +273,23 @@ leaves_ndvi %>%
   )
 ```
 
-## Discussion / conclussion
+## Rocks
+
+### Rocks reflectances
+
+```{r}
+
+```
+
+
+# Discussion / conclussion
 
  <!-- - What do the results mean? -->
  <!-- - Was the original problem resolved effectively? -->
  <!-- - What can this information be used for? -->
 
 
-## Lab questions
+# Lab questions
 
   1. Explain some of the errors and considerations involved with the collection 
   of spectra. (eg. Light Conditions (diffuse, directional)). Provide 3 examples
