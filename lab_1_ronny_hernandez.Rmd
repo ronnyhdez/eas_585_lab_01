@@ -130,7 +130,6 @@ random_second_derivative <- bind_rows(second_d_06,
          "second_derivative" = "X2")
 ```
 
-
 <!-- Import Rocks data -->
 
 ```{r}
@@ -148,7 +147,50 @@ rock_1 <- map_dfr(.x = files,
                   }) 
 ```
 
+<!-- Import spectra correction data -->
 
+```{r import_spectra_correction}
+# Function to calculate reflectance as indicated in lab guide.
+calculate_reflectance <- function(sample_value, dark_value, reference_value) {
+  
+  sample_dark <- sample_value - dark_value
+  reference_dark <- reference_value - dark_value
+  
+  reflectance <- (sample_dark / reference_dark) * 100
+  
+  return(reflectance)
+  
+}
+
+calculate_ndvi <- function(data) {
+  
+  red <- data %>% 
+    select(wavelength_nm, reflectance) %>% 
+    filter(wavelength_nm >= 625 & wavelength_nm <= 700) %>% 
+    select(reflectance) %>%
+    pull() %>% 
+    mean()
+  
+  nir <- data %>% 
+    select(wavelength_nm, reflectance) %>% 
+    filter(wavelength_nm >= 750 & wavelength_nm <= 900) %>% 
+    select(reflectance) %>%
+    pull() %>% 
+    mean()
+  
+  ndvi <- (nir - red) / (nir + red)  
+  return(ndvi)
+  
+}
+
+# Import data and mutate variables
+spectra_correction <- read_xlsx("data/Spectra_correction_example.xlsx") %>% 
+  clean_names() %>% 
+  mutate(average = (measure_1 + measure_2 + measure_3 + measure_4) / 4,
+         reflectance = calculate_reflectance(sample_value = average, 
+                                             dark_value = dark_current,
+                                             reference_value = reference))
+```
 
 # Introduction
 
@@ -333,39 +375,8 @@ rock_1 %>%
   current’. The graph must have appropriate axis values (400,1100 & 0,100 for 
   X-Y axis respectively), the graph must also have titles, labels and display 
   the legend. ***
-  5. Estimate an approximate NDVI (Normalized Difference Vegetation Index) for 
-  this Unknown Spectra. (Red can be an average between 625nm to 700nm, NIR can 
-  be an average between 750nm to 900nm.) Recall that the formula is: 
-  NDVI = (NIR – RED)/(NIR + RED)
-
-
-
-
-
-```{r}
-# Function to calculate reflectance as indicated in lab guide.
-calculate_reflectance <- function(sample_value, dark_value, reference_value) {
   
-  sample_dark <- sample_value - dark_value
-  reference_dark <- reference_value - dark_value
-  
-  reflectance <- (sample_dark / reference_dark) * 100
-  
-  return(reflectance)
-  
-}
-
-# Import data and mutate variables
-spectra_correction <- read_xlsx("data/Spectra_correction_example.xlsx") %>% 
-  clean_names() %>% 
-  mutate(average = (measure_1 + measure_2 + measure_3 + measure_4) / 4,
-         reflectance = calculate_reflectance(sample_value = average, 
-                                             dark_value = dark_current,
-                                             reference_value = reference))
-```
-
-
-```{r}
+```{r spectra_correction_plot, fig.cap = "Values for reflectance, reference and dark current from the spectra correcction example"}
 ggplot(data = spectra_correction) +
   geom_line(aes(x = wavelength_nm, y = average, color = "Reflectance")) +
   geom_line(aes(x = wavelength_nm, y = reference, color = "Reference")) +
@@ -377,9 +388,21 @@ ggplot(data = spectra_correction) +
        y = "Reflectance",
        color = "Type of measurement") +
   theme_light(base_size = 11)
-
-
-
-
 ```
+  
+  
+  
+  5. Estimate an approximate NDVI (Normalized Difference Vegetation Index) for 
+  this Unknown Spectra. (Red can be an average between 625nm to 700nm, NIR can 
+  be an average between 750nm to 900nm.) Recall that the formula is: 
+  NDVI = (NIR – RED)/(NIR + RED)
+
+```{r}
+ndvi <- calculate_ndvi(spectra_correction)
+```
+
+The estimated ndvi is `r ndvi`
+
+
+
 
