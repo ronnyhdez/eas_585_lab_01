@@ -69,7 +69,7 @@ leaves_ndvi <- map_dfr(.x = files,
   mutate(file_id = str_extract(file_id, "(_[^.]+)"))
 ```
 
-<!-- Import random sample data -->
+<!-- Import random ratio sample data -->
 ```{r random_sample_data}
 ## Random samples ---
 ratio_06 <- read_csv("data/random_06_ratios.csv")
@@ -77,6 +77,24 @@ ratio_18 <- read_csv("data/random_18_ratios.csv")
 ratio_23 <- read_csv("data/random_23_ratios.csv")
 
 random_ratios <- bind_rows(ratio_06, ratio_18, ratio_23)
+```
+
+<!-- Import random reflectance  -->
+
+```{r impor_random_reflectance}
+files <- dir_ls(path = "data",  glob = "data/random_reflectance*")
+
+random_reflectance <- map_dfr(.x = files, 
+                              .id = "file_id",
+                              .f = function(archivo) {
+                                read_csv(archivo,
+                                         skip = 4,
+                                         col_names = FALSE) %>% 
+                                  rename(wavelength = X1,
+                                         reflectance = X2)
+                                
+                              }) %>% 
+  mutate(file_id = str_extract(file_id, "(_[^.]+)"))
 ```
 
 <!-- Import random first derivative -->
@@ -250,7 +268,24 @@ random_ratios %>%
   )
 ```
 
-### Random samples wavelengths
+### Random samples reflectance
+
+
+```{r random_sample_reflectance, fig.cap = "Reflectances for the random samples"}
+random_reflectance %>% 
+  filter(wavelength > 400, wavelength < 900) %>%
+  ggplot(aes(x = wavelength, 
+             y = reflectance, 
+             color = file_id)) +
+  geom_line() +
+  scale_y_continuous(breaks = seq(0, 1.13, by = 0.1)) +
+  scale_x_continuous(breaks = seq(400, 900, by = 50)) +
+  scale_color_viridis_d(labels = c("Sample 06", "Sample 18", "Sample 23")) +
+  labs(x = "Wavelength (nm)",
+       y = "Reflectance",
+       color = "Random sample") +
+  theme_light(base_size = 11)
+```
 
 <!-- fig.cap = 'First line of a figure caption, \\\\ followed by an incredibly, -->
 
@@ -350,7 +385,7 @@ rock_1 %>%
   scale_x_continuous(breaks = seq(400, 1000, by = 50)) +
   labs(x = "Wavelength (nm)",
        y = "Reflectance",
-       color = "Leaf id") +
+       color = "Rock sample position") +
   theme_light(base_size = 11)
 ```
 
@@ -379,13 +414,13 @@ rock_1 %>%
 ```{r spectra_correction_plot, fig.cap = "Values for reflectance, reference and dark current from the spectra correcction example"}
 ggplot(data = spectra_correction) +
   geom_line(aes(x = wavelength_nm, y = average, color = "Reflectance")) +
-  geom_line(aes(x = wavelength_nm, y = reference, color = "Reference")) +
-  geom_line(aes(x = wavelength_nm, y = dark_current, color = "Dark current")) +
+  # geom_line(aes(x = wavelength_nm, y = reference, color = "Reference")) +
+  # geom_line(aes(x = wavelength_nm, y = dark_current, color = "Dark current")) +
   scale_color_viridis_d() +
   scale_y_continuous(breaks = seq(0, 100, by = 10)) +
   scale_x_continuous(breaks = seq(400, 1000, by = 50)) +
   labs(x = "Wavelength (nm)",
-       y = "Reflectance",
+       y = "% Reflectance",
        color = "Type of measurement") +
   theme_light(base_size = 11)
 ```
