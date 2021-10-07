@@ -12,7 +12,8 @@ output:
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE)
-
+library(readxl)
+library(janitor)
 library(dplyr)
 library(ggplot2)
 library(readr)
@@ -128,6 +129,26 @@ random_second_derivative <- bind_rows(second_d_06,
   rename("wavelength" = "X1",
          "second_derivative" = "X2")
 ```
+
+
+<!-- Import Rocks data -->
+
+```{r}
+files <- dir_ls(path = "data/", glob = "data/rock*")
+
+rock_1 <- map_dfr(.x = files, 
+                  .id = "file_id",
+                  .f = function(archivo) {
+                    read_csv(archivo,
+                             skip = 4,
+                             col_names = FALSE) %>% 
+                      rename(wavelength = X1,
+                             reflectance = X2)
+                    
+                  }) 
+```
+
+
 
 # Introduction
 
@@ -277,8 +298,18 @@ leaves_ndvi %>%
 
 ### Rocks reflectances
 
-```{r}
-
+```{r rock_reflectance, fig.cap = "Reflectance of rock 1."}
+rock_1 %>% 
+  filter(wavelength > 400, wavelength < 900) %>% 
+  ggplot(aes(x = wavelength, y = reflectance, color = file_id)) +
+  geom_line() +
+  scale_color_viridis_d() +
+  scale_y_continuous(breaks = seq(0, 1.5, by = 0.1)) +
+  scale_x_continuous(breaks = seq(400, 1000, by = 50)) +
+  labs(x = "Wavelength (nm)",
+       y = "Reflectance",
+       color = "Leaf id") +
+  theme_light(base_size = 11)
 ```
 
 
@@ -298,3 +329,57 @@ leaves_ndvi %>%
   chlorophyl A)
   3. If the reflectance is a value of percentage (%) based on the incoming 
   light, what does a value greater than 1 (100%) imply? (Think about the signal)
+  4. Provide a graph which includes the ‘% reflectance, ‘reference’ and ‘dark
+  current’. The graph must have appropriate axis values (400,1100 & 0,100 for 
+  X-Y axis respectively), the graph must also have titles, labels and display 
+  the legend. ***
+  5. Estimate an approximate NDVI (Normalized Difference Vegetation Index) for 
+  this Unknown Spectra. (Red can be an average between 625nm to 700nm, NIR can 
+  be an average between 750nm to 900nm.) Recall that the formula is: 
+  NDVI = (NIR – RED)/(NIR + RED)
+
+
+
+
+
+```{r}
+# Function to calculate reflectance as indicated in lab guide.
+calculate_reflectance <- function(sample_value, dark_value, reference_value) {
+  
+  sample_dark <- sample_value - dark_value
+  reference_dark <- reference_value - dark_value
+  
+  reflectance <- (sample_dark / reference_dark) * 100
+  
+  return(reflectance)
+  
+}
+
+# Import data and mutate variables
+spectra_correction <- read_xlsx("data/Spectra_correction_example.xlsx") %>% 
+  clean_names() %>% 
+  mutate(average = (measure_1 + measure_2 + measure_3 + measure_4) / 4,
+         reflectance = calculate_reflectance(sample_value = average, 
+                                             dark_value = dark_current,
+                                             reference_value = reference))
+```
+
+
+```{r}
+ggplot(data = spectra_correction) +
+  geom_line(aes(x = wavelength_nm, y = average, color = "Reflectance")) +
+  geom_line(aes(x = wavelength_nm, y = reference, color = "Reference")) +
+  geom_line(aes(x = wavelength_nm, y = dark_current, color = "Dark current")) +
+  scale_color_viridis_d() +
+  scale_y_continuous(breaks = seq(0, 100, by = 10)) +
+  scale_x_continuous(breaks = seq(400, 1000, by = 50)) +
+  labs(x = "Wavelength (nm)",
+       y = "Reflectance",
+       color = "Type of measurement") +
+  theme_light(base_size = 11)
+
+
+
+
+```
+
